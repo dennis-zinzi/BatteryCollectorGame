@@ -25,7 +25,23 @@ ABatteryCollectorGameMode::ABatteryCollectorGameMode()
 void ABatteryCollectorGameMode::BeginPlay(){
 	Super::BeginPlay();
 
-	CurrentState = EBatteryPlayState::EPlaying;
+	//find all spawn volume Actors
+	TArray<AActor*> foundActors;
+	//Gets all objects of type AActor
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpawnVolume::StaticClass(), foundActors);
+
+	//Iterate through all AActor Objects
+	for(auto Actor : foundActors){
+		//Attempt to cast AActor to a SpawnVolume object
+		ASpawnVolume *spawnVolumeActor = Cast<ASpawnVolume>(Actor);
+
+		//Add any unique SpawnVolume (will be false if obj not castable) objects within array
+		if(spawnVolumeActor){
+			SpawnVolumeActors.AddUnique(spawnVolumeActor);
+		}
+	}
+
+	SetCurrentState(EBatteryPlayState::EPlaying);
 
 	//set the score to beat
 	ABatteryCollectorCharacter *myCharacter =
@@ -49,22 +65,6 @@ void ABatteryCollectorGameMode::BeginPlay(){
 			CurrentWidget->AddToViewport();
 		}
 	}
-
-	//find all spawn volume Actors
-	TArray<AActor*> foundActors;
-	//Gets all objects of type AActor
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpawnVolume::StaticClass(), foundActors);
-
-	//Iterate through all AActor Objects
-	for(auto Actor : foundActors){
-		//Attempt to cast AActor to a SpawnVolume object
-		ASpawnVolume *spawnVolumeActor = Cast<ASpawnVolume>(Actor);
-
-		//Add any unique SpawnVolume (will be false if obj not castable) objects within array
-		if(spawnVolumeActor){
-			SpawnVolumeActors.AddUnique(spawnVolumeActor);
-		}
-	}
 }
 
 
@@ -78,7 +78,7 @@ void ABatteryCollectorGameMode::Tick(float DeltaTime){
 	if(myCharacter){
 		//If power is greater than winning threshold, set game state to win
 		if(myCharacter->getCurrentPower() > PowerToWin){
-			CurrentState = EBatteryPlayState::EWin;
+			SetCurrentState(EBatteryPlayState::EWin);
 		}
 		//Check if character power is positive
 		else if(myCharacter->getCurrentPower() > 0){
@@ -86,7 +86,7 @@ void ABatteryCollectorGameMode::Tick(float DeltaTime){
 			myCharacter->UpdatePower(-DeltaTime * decayRate * (myCharacter->getInitialPower()));
 		}
 		else{
-			CurrentState = EBatteryPlayState::EGameOver;
+			SetCurrentState(EBatteryPlayState::EGameOver);
 		}
 	}
 
@@ -97,4 +97,49 @@ void ABatteryCollectorGameMode::Tick(float DeltaTime){
 		+ "\nY: " + FString::SanitizeFloat(pos.Y) + "\nZ: " + FString::SanitizeFloat(pos.Z);
 
 	UE_LOG(LogClass, Log, TEXT("character at pos:\n %s"), *pickupDebugString);
+}
+
+
+void ABatteryCollectorGameMode::HandleNewState(EBatteryPlayState newState){
+	switch(newState){
+		//If game is playing
+		case EBatteryPlayState::EPlaying:
+			//spawn volumes active
+			for(ASpawnVolume *volume : SpawnVolumeActors){
+				volume->SetSpawningActive(true);
+			}
+			break;
+		//If game is won
+		case EBatteryPlayState::EWin:
+			//spawn volumes inactive
+			for(ASpawnVolume *volume : SpawnVolumeActors){
+				volume->SetSpawningActive(false);
+			}
+			break;
+		//If game is lost
+		case EBatteryPlayState::EGameOver:
+			//spawn volumes inactive
+			for(ASpawnVolume *volume : SpawnVolumeActors){
+				volume->SetSpawningActive(false);
+			}
+
+			//block player input
+			APlayerController *playerController = UGameplayStatics::GetPlayerController(this, 0);
+			if(playerController){
+				playerController->SetCinematicMode(true, false, false, true, true);
+			}
+
+			//ragdoll the character
+			ACharacter *myCharacter = UGameplayStatics::GetPlayerCharacter(this, 0);
+			if(myCharacter){
+				myCharacter->GetMesh()->SetSimulatePhysics(true);
+				myCharacter->GetMovementComponent()->MovementState.bCanJump = false;
+			}
+
+			break;
+		//Unknown/default state
+		/*default:
+			case EBatteryPlayState::EUnknown:
+			break;*/
+	}
 }

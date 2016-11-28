@@ -18,7 +18,7 @@ ASpawnVolume::ASpawnVolume()
 
 	//Set spawn delay range
 	spawnDelayMin = 1.0f;
-	spawnDelayMax = 4.5f;
+	spawnDelayMax = 3.5f;
 
 }
 

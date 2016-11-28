@@ -39,6 +39,8 @@ class ABatteryCollectorGameMode : public AGameMode
 		//UFUNCTION(BlueprintPure, Category = "Power")
 		inline void SetCurrentState(EBatteryPlayState state){
 			CurrentState = state;
+			//handle the new state
+			HandleNewState(CurrentState);
 		}
 		
 
@@ -65,8 +67,10 @@ class ABatteryCollectorGameMode : public AGameMode
 		//Keeps track of current play state
 		EBatteryPlayState CurrentState;
 
-		//
 		TArray<class ASpawnVolume*> SpawnVolumeActors;
+
+		//Handles any fn calls that change the game's state
+		void HandleNewState(EBatteryPlayState newState);
 };
 
 
