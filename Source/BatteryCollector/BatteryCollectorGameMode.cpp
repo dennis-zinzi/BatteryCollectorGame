@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "Blueprint/UserWidget.h"
+#include "SpawnVolume.h"
 
 ABatteryCollectorGameMode::ABatteryCollectorGameMode()
 {
@@ -46,6 +47,22 @@ void ABatteryCollectorGameMode::BeginPlay(){
 
 		if(CurrentWidget != nullptr){
 			CurrentWidget->AddToViewport();
+		}
+	}
+
+	//find all spawn volume Actors
+	TArray<AActor*> foundActors;
+	//Gets all objects of type AActor
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpawnVolume::StaticClass(), foundActors);
+
+	//Iterate through all AActor Objects
+	for(auto Actor : foundActors){
+		//Attempt to cast AActor to a SpawnVolume object
+		ASpawnVolume *spawnVolumeActor = Cast<ASpawnVolume>(Actor);
+
+		//Add any unique SpawnVolume (will be false if obj not castable) objects within array
+		if(spawnVolumeActor){
+			SpawnVolumeActors.AddUnique(spawnVolumeActor);
 		}
 	}
 }

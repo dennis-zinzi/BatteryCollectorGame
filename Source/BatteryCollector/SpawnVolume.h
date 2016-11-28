@@ -30,6 +30,11 @@ class BATTERYCOLLECTOR_API ASpawnVolume : public AActor
 		FVector getRandomPointInVolume();
 
 
+		//Toggles whether the spawn volume should spawn pickups
+		UFUNCTION(BlueprintCallable, Category = "Spawning")
+		void SetSpawningActive(bool bShouldSpawn);
+
+
 	protected:
 		//The pickup to spawn
 		UPROPERTY(EditAnywhere, Category = "Spawning")

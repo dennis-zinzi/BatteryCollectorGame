@@ -64,6 +64,9 @@ class ABatteryCollectorGameMode : public AGameMode
 	private:
 		//Keeps track of current play state
 		EBatteryPlayState CurrentState;
+
+		//
+		TArray<class ASpawnVolume*> SpawnVolumeActors;
 };
 
 
